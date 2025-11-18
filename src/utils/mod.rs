@@ -5,3 +5,4 @@ pub mod dns;
 pub mod network;
 pub mod time;
 pub mod security;
+pub mod metrics;
