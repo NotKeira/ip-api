@@ -1,9 +1,5 @@
-//! Metrics endpoint handler
-
-use crate::utils::metrics::Metrics;
 use axum::{extract::State, http::StatusCode, response::Json};
 use serde::Serialize;
-use std::sync::Arc;
 use std::time::SystemTime;
 
 /// Metrics response
@@ -21,10 +17,8 @@ lazy_static::lazy_static! {
 }
 
 /// Handler for GET /metrics endpoint
-///
-/// Returns API usage statistics and metrics
 pub async fn get_metrics(
-    State(metrics): State<Arc<Metrics>>,
+    State(state): State<crate::AppState>,
 ) -> Result<Json<MetricsResponse>, StatusCode> {
     let now = SystemTime::now();
     let uptime = now
@@ -38,9 +32,9 @@ pub async fn get_metrics(
         .as_secs();
 
     Ok(Json(MetricsResponse {
-        total_requests: metrics.total(),
-        successful_requests: metrics.success(),
-        failed_requests: metrics.failure(),
+        total_requests: state.metrics.total(),
+        successful_requests: state.metrics.success(),
+        failed_requests: state.metrics.failure(),
         uptime_seconds: uptime,
         timestamp,
     }))

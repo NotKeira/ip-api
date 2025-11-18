@@ -17,6 +17,13 @@ use std::sync::Arc;
 use tokio::net::TcpListener;
 use utils::{cache::DnsCache, metrics::Metrics};
 
+/// Application state shared across handlers
+#[derive(Clone)]
+struct AppState {
+    metrics: Arc<Metrics>,
+    dns_cache: Arc<DnsCache>,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
@@ -47,6 +54,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create metrics collector
     let metrics = Arc::new(Metrics::new());
+
+    // Create app state
+    let app_state = AppState {
+        metrics: metrics.clone(),
+        dns_cache: dns_cache.clone(),
+    };
 
     // Spawn cleanup task for rate limiter
     {
@@ -83,7 +96,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/headers", get(handlers::headers::get_headers))
         .route("/version", get(handlers::version::get_version))
         .route("/lookup", get(handlers::lookup::lookup_ip))
-        .with_state(metrics.clone())
+        .with_state(app_state)
+        .layer(axum_middleware::from_fn_with_state(
+            metrics.clone(),
+            middleware::metrics::metrics_middleware,
+        ))
         .layer(axum_middleware::from_fn(middleware::logging::log_request))
         .layer(axum_middleware::from_fn(
             middleware::security_headers::add_security_headers,
