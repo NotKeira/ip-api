@@ -29,3 +29,23 @@ pub struct IpResponse {
     #[serde(rename = "Local-Time")]
     pub local_time: String,
 }
+
+impl IpResponse {
+    /// Convert to plain text format
+    pub fn to_plain_text(&self) -> String {
+        let rdns = self.rdns.as_deref().unwrap_or("null");
+        let user_agent = self.user_agent.as_deref().unwrap_or("null");
+
+        format!(
+            "IP: {}\nrDNS: {}\nUser-Agent: {}\nUnix-Timestamp: {}\nUTC-Time: {}\nLocal-Time: {}",
+            self.ip, rdns, user_agent, self.unix_timestamp, self.utc_time, self.local_time
+        )
+    }
+}
+
+/// Response format enum
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ResponseFormat {
+    Json,
+    PlainText,
+}

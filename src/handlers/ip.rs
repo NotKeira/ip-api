@@ -1,13 +1,20 @@
 //! IP information endpoint handler
 
-use crate::models::IpResponse;
+use crate::models::{IpResponse, ResponseFormat};
 use crate::utils::{dns, security, time};
 use axum::{
-    extract::ConnectInfo,
+    extract::{ConnectInfo, Query},
     http::{HeaderMap, StatusCode},
-    response::Json,
+    response::{IntoResponse, Response},
 };
+use serde::Deserialize;
 use std::net::SocketAddr;
+
+/// Query parameters for IP endpoint
+#[derive(Deserialize)]
+pub struct IpQuery {
+    format: Option<String>,
+}
 
 /// Handler for GET / endpoint
 ///
@@ -16,7 +23,11 @@ use std::net::SocketAddr;
 pub async fn get_ip_info(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
-) -> Result<Json<IpResponse>, StatusCode> {
+    Query(query): Query<IpQuery>,
+) -> Result<Response, StatusCode> {
+    // Determine response format from query param or Accept header
+    let format = determine_format(&query, &headers);
+
     // Extract client IP from X-Forwarded-For or direct connection
     let client_ip = extract_client_ip(&headers, addr);
 
@@ -39,14 +50,50 @@ pub async fn get_ip_info(
     // Get current timestamps in various formats
     let (unix_timestamp, utc_time, local_time) = time::get_timestamps()?;
 
-    Ok(Json(IpResponse {
+    let response = IpResponse {
         ip: client_ip,
         rdns,
         user_agent,
         unix_timestamp,
         utc_time,
         local_time,
-    }))
+    };
+
+    // Return response in requested format
+    Ok(match format {
+        ResponseFormat::Json => axum::Json(response).into_response(),
+        ResponseFormat::PlainText => (
+            [(
+                axum::http::header::CONTENT_TYPE,
+                "text/plain; charset=utf-8",
+            )],
+            response.to_plain_text(),
+        )
+            .into_response(),
+    })
+}
+
+/// Determine response format from query parameter or Accept header
+fn determine_format(query: &IpQuery, headers: &HeaderMap) -> ResponseFormat {
+    // Check query parameter first
+    if let Some(ref fmt) = query.format {
+        return match fmt.to_lowercase().as_str() {
+            "text" | "plain" | "txt" => ResponseFormat::PlainText,
+            _ => ResponseFormat::Json,
+        };
+    }
+
+    // Check Accept header
+    if let Some(accept) = headers.get("accept") {
+        if let Ok(accept_str) = accept.to_str() {
+            if accept_str.contains("text/plain") {
+                return ResponseFormat::PlainText;
+            }
+        }
+    }
+
+    // Default to JSON
+    ResponseFormat::Json
 }
 
 /// Extract client IP from X-Forwarded-For header or direct connection
