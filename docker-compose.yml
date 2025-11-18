@@ -1,0 +1,51 @@
+services: # IPv4 instance
+  ip-api-ipv4:
+    build: .
+    container_name: ip-api-ipv4
+    restart: unless-stopped
+    ports:
+      - "7111:7111"
+    environment:
+      - PORT=7111
+      - RATE_LIMIT_REQUESTS=60
+      - RATE_LIMIT_WINDOW_SECS=60
+      - DNS_CACHE_TTL_SECS=300
+      - REQUEST_TIMEOUT_SECS=30
+      - RUST_LOG=info
+      # Uncomment for JSON logs
+      # - LOG_FORMAT=json
+    networks:
+      - ip-api-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:7111/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # IPv6 instance
+  ip-api-ipv6:
+    build: .
+    container_name: ip-api-ipv6
+    restart: unless-stopped
+    ports:
+      - "7112:7112"
+    environment:
+      - PORT=7112
+      - RATE_LIMIT_REQUESTS=60
+      - RATE_LIMIT_WINDOW_SECS=60
+      - DNS_CACHE_TTL_SECS=300
+      - REQUEST_TIMEOUT_SECS=30
+      - RUST_LOG=info
+    networks:
+      - ip-api-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:7112/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  ip-api-network:
+    driver: bridge
