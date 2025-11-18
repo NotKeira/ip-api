@@ -1,0 +1,23 @@
+[Unit]
+Description=IP API Service (IPv6)
+After=network.target
+Documentation=https://github.com/xFanexx/ip-api
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+ExecStart=/usr/local/bin/ip-api --port 7112
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
