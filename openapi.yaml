@@ -1,0 +1,377 @@
+openapi: 3.0.3
+info:
+  title: IP API
+  description: |
+    A lightweight API that returns client IP information including IP address, 
+    reverse DNS, user agent, and timestamp data. Supports both IPv4 and IPv6.
+    
+    ## Features
+    - Client IP detection with proxy support
+    - Reverse DNS lookup
+    - Multiple timestamp formats
+    - Health checks and metrics
+    - Rate limiting
+    - Response caching
+    
+    ## Base URLs
+    - IPv4: `https://ipv4.example.com`
+    - IPv6: `https://ipv6.example.com`
+  version: 2.0.0
+  license:
+    name: EUPL-1.2
+    url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+  contact:
+    name: IP API Support
+    url: https://github.com/xFanexx/ip-api/issues
+
+servers:
+  - url: https://ipv4.example.com
+    description: IPv4 endpoint
+  - url: https://ipv6.example.com
+    description: IPv6 endpoint
+  - url: http://localhost:7111
+    description: Local development (IPv4)
+  - url: http://localhost:7112
+    description: Local development (IPv6)
+
+tags:
+  - name: IP Information
+    description: Client IP and network information
+  - name: Monitoring
+    description: Health checks and metrics
+  - name: Utilities
+    description: Utility endpoints for debugging
+
+paths:
+  /:
+    get:
+      tags:
+        - IP Information
+      summary: Get client IP information
+      description: |
+        Returns comprehensive information about the client's IP address including
+        reverse DNS, user agent, and timestamp data.
+      parameters:
+        - name: format
+          in: query
+          description: Response format (json or text)
+          required: false
+          schema:
+            type: string
+            enum: [json, text, plain, txt]
+            default: json
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpResponse'
+              example:
+                IP: "203.0.113.42"
+                rDNS: "example.com"
+                User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                Unix-Timestamp: 1732040095
+                UTC-Time: "2025-11-18 17:54:55 UTC"
+                Local-Time: "2025-11-18 17:54:55"
+            text/plain:
+              schema:
+                type: string
+              example: |
+                IP: 203.0.113.42
+                rDNS: example.com
+                User-Agent: Mozilla/5.0
+                Unix-Timestamp: 1732040095
+                UTC-Time: 2025-11-18 17:54:55 UTC
+                Local-Time: 2025-11-18 17:54:55
+        '400':
+          description: Bad request (invalid IP format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Rate limit exceeded. Please try again later."
+
+  /lookup:
+    get:
+      tags:
+        - IP Information
+      summary: Look up any IP address
+      description: |
+        Performs a reverse DNS lookup on any specified IP address.
+      parameters:
+        - name: ip
+          in: query
+          description: IP address to look up
+          required: true
+          schema:
+            type: string
+            format: ipv4 or ipv6
+          example: "8.8.8.8"
+      responses:
+        '200':
+          description: Successful lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpResponse'
+              example:
+                IP: "8.8.8.8"
+                rDNS: "dns.google"
+                User-Agent: null
+                Unix-Timestamp: 1732040095
+                UTC-Time: "2025-11-18 17:54:55 UTC"
+                Local-Time: "2025-11-18 17:54:55"
+        '400':
+          description: Invalid IP address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health:
+    get:
+      tags:
+        - Monitoring
+      summary: Health check
+      description: |
+        Returns the health status of the API service. Useful for load balancers
+        and monitoring systems.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                timestamp: 1732040095
+                uptime_seconds: 86400
+        '500':
+          description: Service is unhealthy
+
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Usage metrics
+      description: |
+        Returns API usage statistics including request counts and uptime.
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+              example:
+                total_requests: 15420
+                successful_requests: 15380
+                failed_requests: 40
+                uptime_seconds: 86400
+                timestamp: 1732040095
+
+  /headers:
+    get:
+      tags:
+        - Utilities
+      summary: View request headers
+      description: |
+        Returns all HTTP headers sent with the request. Useful for debugging
+        proxy configurations and verifying header forwarding.
+      responses:
+        '200':
+          description: Headers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeadersResponse'
+              example:
+                headers:
+                  host: "ipv4.example.com"
+                  user-agent: "curl/7.68.0"
+                  x-forwarded-for: "203.0.113.42"
+                  x-real-ip: "203.0.113.42"
+
+  /version:
+    get:
+      tags:
+        - Utilities
+      summary: API version information
+      description: |
+        Returns version information about the API including version number,
+        repository, and authors.
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+              example:
+                version: "2.0.0"
+                name: "ip-api"
+                authors: ["xFanexx", "NotKeira"]
+                repository: "https://github.com/xFanexx/ip-api"
+                rust_edition: "2024"
+
+components:
+  schemas:
+    IpResponse:
+      type: object
+      properties:
+        IP:
+          type: string
+          description: Client IP address (IPv4 or IPv6)
+          example: "203.0.113.42"
+        rDNS:
+          type: string
+          nullable: true
+          description: Reverse DNS hostname (null if lookup fails)
+          example: "example.com"
+        User-Agent:
+          type: string
+          nullable: true
+          description: Client user agent string
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        Unix-Timestamp:
+          type: integer
+          format: int64
+          description: Current Unix timestamp in seconds
+          example: 1732040095
+        UTC-Time:
+          type: string
+          description: Current time in UTC (YYYY-MM-DD HH:MM:SS UTC)
+          example: "2025-11-18 17:54:55 UTC"
+        Local-Time:
+          type: string
+          description: Current time in server's local timezone
+          example: "2025-11-18 17:54:55"
+      required:
+        - IP
+        - Unix-Timestamp
+        - UTC-Time
+        - Local-Time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Health status
+          example: "healthy"
+        timestamp:
+          type: integer
+          format: int64
+          description: Current Unix timestamp
+          example: 1732040095
+        uptime_seconds:
+          type: integer
+          format: int64
+          description: Service uptime in seconds
+          example: 86400
+      required:
+        - status
+        - timestamp
+        - uptime_seconds
+
+    MetricsResponse:
+      type: object
+      properties:
+        total_requests:
+          type: integer
+          format: int64
+          description: Total number of requests received
+          example: 15420
+        successful_requests:
+          type: integer
+          format: int64
+          description: Number of successful requests
+          example: 15380
+        failed_requests:
+          type: integer
+          format: int64
+          description: Number of failed requests
+          example: 40
+        uptime_seconds:
+          type: integer
+          format: int64
+          description: Service uptime in seconds
+          example: 86400
+        timestamp:
+          type: integer
+          format: int64
+          description: Current Unix timestamp
+          example: 1732040095
+      required:
+        - total_requests
+        - successful_requests
+        - failed_requests
+        - uptime_seconds
+        - timestamp
+
+    HeadersResponse:
+      type: object
+      properties:
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs of HTTP headers
+          example:
+            host: "ipv4.example.com"
+            user-agent: "curl/7.68.0"
+      required:
+        - headers
+
+    VersionResponse:
+      type: object
+      properties:
+        version:
+          type: string
+          description: API version number
+          example: "2.0.0"
+        name:
+          type: string
+          description: Package name
+          example: "ip-api"
+        authors:
+          type: array
+          items:
+            type: string
+          description: List of authors
+          example: ["xFanexx", "NotKeira"]
+        repository:
+          type: string
+          format: uri
+          description: GitHub repository URL
+          example: "https://github.com/xFanexx/ip-api"
+        rust_edition:
+          type: string
+          description: Rust edition used
+          example: "2024"
+      required:
+        - version
+        - name
+        - authors
+        - repository
+        - rust_edition
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid IP address format"
+
+  securitySchemes: {}
+
+security: []
