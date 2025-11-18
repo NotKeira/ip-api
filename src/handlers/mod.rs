@@ -2,4 +2,5 @@
 
 pub mod ip;
 pub mod health;
-mod metrics;
+pub mod metrics;
+pub mod headers;
