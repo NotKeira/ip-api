@@ -292,6 +292,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 **Quick Guidelines:**
 
+- Follow the [Code of Conduct](CODE_OF_CONDUCT.md)
 - Follow Rust conventions
 - Add tests for new features
 - Update documentation
@@ -322,7 +323,6 @@ Planned features for future releases:
 - [ ] Prometheus metrics endpoint
 - [ ] GeoIP support (optional)
 - [ ] ASN information
-- [ ] Bulk IP lookup endpoint
 - [ ] WebSocket support for real-time updates
 - [ ] GraphQL API option
 

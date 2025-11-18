@@ -6,7 +6,8 @@ All types of contributions are encouraged and valued. Please make sure to read t
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by respect and professionalism. Please be kind and constructive in your interactions.
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior through GitHub issues or by contacting the maintainers.
+
 
 ## How Can I Contribute?
 
