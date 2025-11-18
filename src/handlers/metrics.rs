@@ -1,3 +1,5 @@
+//! Metrics endpoint handler
+
 use axum::{extract::State, http::StatusCode, response::Json};
 use serde::Serialize;
 use std::time::SystemTime;
@@ -17,6 +19,8 @@ lazy_static::lazy_static! {
 }
 
 /// Handler for GET /metrics endpoint
+///
+/// Returns API usage statistics and metrics
 pub async fn get_metrics(
     State(state): State<crate::AppState>,
 ) -> Result<Json<MetricsResponse>, StatusCode> {

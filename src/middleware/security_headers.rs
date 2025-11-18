@@ -10,6 +10,14 @@ use axum::{
 
 /// Middleware to add security headers to all responses
 pub async fn add_security_headers(request: Request<Body>, next: Next) -> impl IntoResponse {
+    // Check if request is over HTTPS
+    let is_https = request
+        .headers()
+        .get("x-forwarded-proto")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v == "https")
+        .unwrap_or(false);
+
     let mut response = next.run(request).await;
 
     let headers = response.headers_mut();
@@ -25,6 +33,14 @@ pub async fn add_security_headers(request: Request<Body>, next: Next) -> impl In
         "content-security-policy",
         SecurityHeaders::content_security_policy(),
     );
+
+    // Only add HSTS header if request is over HTTPS
+    if is_https {
+        headers.insert(
+            "strict-transport-security",
+            SecurityHeaders::strict_transport_security(),
+        );
+    }
 
     response
 }

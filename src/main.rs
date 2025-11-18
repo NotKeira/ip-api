@@ -19,9 +19,9 @@ use utils::{cache::DnsCache, metrics::Metrics};
 
 /// Application state shared across handlers
 #[derive(Clone)]
-struct AppState {
-    metrics: Arc<Metrics>,
-    dns_cache: Arc<DnsCache>,
+pub struct AppState {
+    pub metrics: Arc<Metrics>,
+    pub dns_cache: Arc<DnsCache>,
 }
 
 #[tokio::main]
@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!(
         port = config.port,
         rate_limit = config.rate_limit_requests,
+        request_timeout = config.request_timeout_secs,
         "Configuration loaded"
     );
 
@@ -60,6 +61,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         metrics: metrics.clone(),
         dns_cache: dns_cache.clone(),
     };
+
+    // Clone config for middleware
+    let request_timeout = config.request_timeout();
 
     // Spawn cleanup task for rate limiter
     {
@@ -102,6 +106,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             middleware::metrics::metrics_middleware,
         ))
         .layer(axum_middleware::from_fn(middleware::logging::log_request))
+        .layer(axum_middleware::from_fn(move |req, next| {
+            middleware::timeout::timeout_middleware(req, next, request_timeout)
+        }))
         .layer(axum_middleware::from_fn(
             middleware::security_headers::add_security_headers,
         ))
