@@ -1,4 +1,7 @@
 # Self-Hostable IP API
+
+[![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+
 A lightweight API that returns the client IP, hostname (reverse DNS), user agent, and timestamp information. Supports **IPv4/IPv6** via separate endpoints with a reverse proxy.
 
 ## Response Example
