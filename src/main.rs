@@ -8,6 +8,7 @@ mod handlers;
 mod middleware;
 mod models;
 mod utils;
+mod config;
 
 use axum::{middleware as axum_middleware, routing::get, Router};
 use std::net::SocketAddr;
