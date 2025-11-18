@@ -7,3 +7,4 @@ pub mod time;
 pub mod security;
 pub mod metrics;
 pub mod cache;
+pub mod logging;
