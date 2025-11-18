@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/xFanexx/ip-api/discussions
+    about: Ask questions or start a discussion about the project
+  - name: Security Vulnerability
+    url: https://github.com/xFanexx/ip-api/security/advisories/new
+    about: Report a security vulnerability (private disclosure)
+  - name: Documentation
+    url: https://github.com/xFanexx/ip-api/blob/main/README.md
+    about: Read the documentation for usage and deployment guides
